@@ -1,0 +1,61 @@
+services:
+  app:
+    build: .
+    container_name: roofingfollowflow_app
+    ports:
+      - "8125:8000"
+    environment:
+      APP_NAME: RoofingFollowFlow
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8125
+      APP_KEY: "base64:gcmpayZRNAfAl9eNGoDK/l8r99/esJz11SCgoWEKWqo="
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: roofing_follow_flow
+      DB_USERNAME: rff
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      SESSION_DRIVER: database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_CHANNEL: stderr
+    volumes:
+      - ./storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: roofingfollowflow_mysql
+    environment:
+      MYSQL_DATABASE: roofing_follow_flow
+      MYSQL_USER: rff
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "33095:3306"
+    volumes:
+      - rff_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: roofingfollowflow_redis
+    ports:
+      - "63815:6379"
+    restart: unless-stopped
+
+volumes:
+  rff_mysql_data:
